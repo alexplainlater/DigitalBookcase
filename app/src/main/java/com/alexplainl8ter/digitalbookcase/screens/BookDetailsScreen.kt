@@ -93,7 +93,7 @@ fun BookDetailsScreen(
                 ) {
                     // Book Cover Image (Left side in Row)
                     AsyncImage(
-                        model = book.googleCoverImageUrl,
+                        model = book.coverImageUrl,
                         contentDescription = "Book Cover of ${book.title}",
                         modifier = Modifier
                             .width(150.dp)

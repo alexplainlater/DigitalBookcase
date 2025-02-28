@@ -107,12 +107,12 @@ fun BookcaseScreen(navController: NavController) {
                                 "Authors: ${book.authors ?: "Not found"}\n" +
                                 "Published Date: ${book.publishedDate ?: "Not found"}\n" +
                                 "ISBN: ${book.isbn13 ?: "Not found"}\n" +
-                                "Cover Image URL: ${book.googleCoverImageUrl ?: "Not found"}"
+                                "Cover Image URL: ${book.coverImageUrl ?: "Not found"}"
                     )
                 }
 
                 AsyncImage(
-                    model = book.googleCoverImageUrl,
+                    model = book.coverImageUrl,
                     contentDescription = "Book Cover of ${book.title}",
                     modifier = Modifier
                         .width(if (isFocusedItem) 386.dp else 258.dp)

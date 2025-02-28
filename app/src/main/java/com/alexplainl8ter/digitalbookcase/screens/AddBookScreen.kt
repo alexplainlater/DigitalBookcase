@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,12 +43,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.alexplainl8ter.digitalbookcase.ApiType
 import com.alexplainl8ter.digitalbookcase.Book
 import com.alexplainl8ter.digitalbookcase.BookDatabase
-import com.alexplainl8ter.digitalbookcase.BookItem
 import com.alexplainl8ter.digitalbookcase.BookSearchResponse
 import com.alexplainl8ter.digitalbookcase.BookSearchService
 import com.alexplainl8ter.digitalbookcase.R
+import com.alexplainl8ter.digitalbookcase.SettingsDataStoreManager
 import com.alexplainl8ter.digitalbookcase.ui.theme.DigitalBookcaseTheme
 import kotlinx.coroutines.launch
 
@@ -55,13 +57,22 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddBookScreen(snackbarHostState: SnackbarHostState) {
     var searchText by remember { mutableStateOf("") }
-    var searchSuggestions by remember { mutableStateOf<List<BookItem>>(emptyList()) }
+    var searchSuggestions by remember { mutableStateOf<List<Book>>(emptyList()) } // Changed to List<Book>
     val bookSearchService = remember { BookSearchService() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val bookDao = remember { BookDatabase.getDatabase(context).bookDao() }
+    val settingsDataStoreManager = remember { SettingsDataStoreManager(context) } // Get DataStoreManager
 
-    var selectedBook by remember { mutableStateOf<BookItem?>(null) }
+    var selectedBook by remember { mutableStateOf<Book?>(null) } // Changed to Book?
+    var selectedApiType by remember { mutableStateOf(ApiType.GOOGLE_BOOKS) } // Default, will be overridden
+
+    // Load API type from DataStore when screen is composed
+    LaunchedEffect(Unit) {
+        settingsDataStoreManager.apiTypeFlow.collect { apiType ->
+            selectedApiType = apiType
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -85,25 +96,24 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
                 {
                     searchText = it
                     coroutineScope.launch {
-                        when (val response = bookSearchService.searchBooks(it)) {
-                            is BookSearchResponse.Success -> { // API Call Success
-                                searchSuggestions = response.result.items?.take(5)
-                                    ?: emptyList() // Update suggestions with API results
+                        val apiService = bookSearchService.createApiService(selectedApiType) // Use selectedApiType!
+                        when (val response = apiService.searchBooks(it)) {
+                            is BookSearchResponse.Success -> {
+                                searchSuggestions = response.result.take(5)
                             }
 
                             is BookSearchResponse.NetworkError -> {
-                                searchSuggestions = emptyList() // Clear suggestions
-                                snackbarHostState.showSnackbar( // Show Snackbar notification
+                                searchSuggestions = emptyList()
+                                snackbarHostState.showSnackbar(
                                     message = "No internet connection. Book search unavailable offline.",
                                     duration = SnackbarDuration.Short
                                 )
                             }
 
                             is BookSearchResponse.OtherError -> {
-                                searchSuggestions =
-                                    emptyList() // Clear suggestions (or handle other errors differently if needed)
+                                searchSuggestions = emptyList()
                                 Toast.makeText(context, "Book search error.", Toast.LENGTH_SHORT)
-                                    .show() // Keep basic Toast for other errors (or use Snackbar for errors too)
+                                    .show()
                             }
                         }
                     }
@@ -121,14 +131,12 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
                     Text("No suggestions yet. Start typing to search.")
                 } else {
                     searchSuggestions.forEach { suggestion ->
-                        suggestion.volumeInfo?.title?.let { title ->
-                            SuggestionItem(
-                                suggestion = suggestion,
-                                onSuggestionClick = { clickedBookItem ->
-                                    selectedBook = clickedBookItem
-                                }
-                            )
-                        }
+                        SuggestionItem(
+                            suggestion = suggestion, // SuggestionItem now takes Book
+                            onSuggestionClick = { clickedBook ->
+                                selectedBook = clickedBook
+                            }
+                        )
                     }
                 }
             }
@@ -155,10 +163,7 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
                         verticalAlignment = Alignment.Top
                     ) {
                         AsyncImage(
-                            model = book.volumeInfo?.imageLinks?.smallThumbnail?.replace(
-                                "http://",
-                                "https://"
-                            ),
+                            model = book.coverImageUrl,
                             contentDescription = "Book Cover Preview",
                             modifier = Modifier
                                 .width(100.dp)
@@ -175,13 +180,13 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                     append("Title:")
                                 }
-                                append(" ${book.volumeInfo?.title ?: "N/A"}")
+                                append(" ${book.title ?: "N/A"}") // Use generic Book properties
                             }
                             val annotatedStringAuthor = buildAnnotatedString {
                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                     append("Author(s):")
                                 }
-                                append(" ${book.volumeInfo?.authors?.joinToString(", ") ?: "N/A"}")
+                                append(" ${book.authors ?: "N/A"}") // Use generic Book properties
                             }
                             Text(text = annotatedStringTitle)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -197,42 +202,23 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
             Button(onClick = {
                 coroutineScope.launch {
                     if (selectedBook != null) {
-                        val isbn13 = selectedBook?.volumeInfo?.industryIdentifiers?.find {
-                            it.type == "ISBN_13"
-                        }?.identifier
+                        val bookToAdd = selectedBook!! // selectedBook is now Book
 
-                        val bookToAdd = Book(
-                            source = "Google",
-                            bookId = selectedBook?.id ?: "",
-                            title = selectedBook?.volumeInfo?.title ?: searchText,
-                            authors = selectedBook?.volumeInfo?.authors?.joinToString(", "),
-                            publishedDate = selectedBook?.volumeInfo?.publishedDate,
-                            pageCount = null,
-                            description = selectedBook?.volumeInfo?.description,
-                            userRating = null,
-                            isbn13 = isbn13,
-                            googleCoverImageUrl = selectedBook?.volumeInfo?.imageLinks?.thumbnail?.replace(
-                                "http://",
-                                "https://"
-                            ),
-                            openLibraryCoverURL = null,
-                            insertionTimestamp = null
-                        )
                         Log.d(
-                        "AddBookScreen",
-                        "Inserting book with:\n " +
-                                "Source: ${bookToAdd.source ?: "Not found"}\n"+
-                                "Book ID: ${bookToAdd.bookId}\n" +
-                                "Title: ${bookToAdd.title}\n" +
-                                "Authors: ${bookToAdd.authors ?: "Not found"}\n" +
-                                "Published Date: ${bookToAdd.publishedDate ?: "Not found"}\n" +
-                                "Page Count: ${bookToAdd.pageCount ?: "Not found"}\n" +
-                                "Description: ${bookToAdd.description ?: "Not found"}\n" +
-                                "User Rating: ${bookToAdd.userRating ?: "Not found"}\n" +
-                                "ISBN: ${bookToAdd.isbn13 ?: "Not found"}\n" +
-                                "Google Cover Image URL: ${bookToAdd.googleCoverImageUrl ?: "Not found"}\n" +
-                                "OpenLibrary.org Cover Image URL: ${bookToAdd.openLibraryCoverURL ?: "Not found"}\n " +
-                                "Insertion Timestamp: ${bookToAdd.insertionTimestamp ?: "Not found"}"
+                            "AddBookScreen",
+                            "Inserting book with:\n " +
+                                    "Source: ${bookToAdd.source ?: "Not found"}\n"+
+                                    "Book ID: ${bookToAdd.bookId}\n" +
+                                    "Title: ${bookToAdd.title}\n" +
+                                    "Authors: ${bookToAdd.authors ?: "Not found"}\n" +
+                                    "Published Date: ${bookToAdd.publishedDate ?: "Not found"}\n" +
+                                    "Page Count: ${bookToAdd.pageCount ?: "Not found"}\n" +
+                                    "Description: ${bookToAdd.description ?: "Not found"}\n" +
+                                    "User Rating: ${bookToAdd.userRating ?: "Not found"}\n" +
+                                    "ISBN: ${bookToAdd.isbn13 ?: "Not found"}\n" +
+                                    "Cover Image URL: ${bookToAdd.coverImageUrl ?: "Not found"}\n" +
+                                    "Thumbnail Cover Image URL: ${bookToAdd.thumbnailImageURL ?: "Not found"}\n " +
+                                    "Insertion Timestamp: ${bookToAdd.insertionTimestamp ?: "Not found"}"
                         )
 
                         bookDao.insertBook(bookToAdd)
@@ -254,6 +240,7 @@ fun AddBookScreen(snackbarHostState: SnackbarHostState) {
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

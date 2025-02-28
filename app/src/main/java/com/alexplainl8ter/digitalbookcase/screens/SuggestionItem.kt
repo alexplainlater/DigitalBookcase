@@ -19,10 +19,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.alexplainl8ter.digitalbookcase.BookItem
+import com.alexplainl8ter.digitalbookcase.Book
 
 @Composable
-fun SuggestionItem(suggestion: BookItem, onSuggestionClick: (BookItem) -> Unit) {
+fun SuggestionItem(suggestion: Book, onSuggestionClick: (Book) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -30,14 +30,10 @@ fun SuggestionItem(suggestion: BookItem, onSuggestionClick: (BookItem) -> Unit) 
             .clickable { onSuggestionClick(suggestion) },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val imageUrl = suggestion.volumeInfo?.imageLinks?.smallThumbnail?.replace(
-            "http://",
-            "https://"
-        )
-        Log.d("SuggestionItem", "ImageURL: ${imageUrl}")
-        if (imageUrl != null) {
+        Log.d("SuggestionItem", "ImageURL: ${suggestion.thumbnailImageURL}")
+        if (suggestion.thumbnailImageURL != null) {
             AsyncImage(
-                model = imageUrl,
+                model = suggestion.thumbnailImageURL,
                 contentDescription = "Book Thumbnail",
                 modifier = Modifier
                     .padding(end = 8.dp)
@@ -54,19 +50,18 @@ fun SuggestionItem(suggestion: BookItem, onSuggestionClick: (BookItem) -> Unit) 
             )
         }
         Column{
-            Text(text = suggestion.volumeInfo?.title ?: "N/A",
+            Text(text = suggestion.title ?: "N/A",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(text = "by: ${suggestion.volumeInfo?.authors?.joinToString(", ") ?: "N/A"}",
+            Text(text = "by: ${suggestion.authors ?: "N/A"}",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp)
             )
         }
-
     }
 }

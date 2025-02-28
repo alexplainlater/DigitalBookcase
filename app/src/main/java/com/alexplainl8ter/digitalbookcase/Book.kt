@@ -17,7 +17,7 @@ data class Book(
     @ColumnInfo(name = "description") val description: String?,
     @ColumnInfo(name = "userRating") val userRating: Int?,
     @ColumnInfo(name = "isbn13") val isbn13: String?,
-    @ColumnInfo(name = "googleCoverImageUrl") val googleCoverImageUrl: String?,
-    @ColumnInfo(name = "openLibraryCoverURL") val openLibraryCoverURL: String?,
+    @ColumnInfo(name = "coverImageUrl") val coverImageUrl: String?,
+    @ColumnInfo(name = "thumbnailImageURL") val thumbnailImageURL: String?,
     @ColumnInfo(name = "insertionTimestamp") val insertionTimestamp: Long?
 )
