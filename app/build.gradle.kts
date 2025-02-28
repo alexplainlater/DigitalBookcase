@@ -22,7 +22,7 @@ android {
         buildConfigField(
             "String",
             name = "GOOGLE_BOOKS_API_KEY",
-            value = "\"AIzaSyCKSm82yxeMCbWyLsMJH1M0oEJ7ZmfIGj0\""
+            value = "\"XXXXX\""
         )
     }
 
