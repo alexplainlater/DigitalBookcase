@@ -1,0 +1,21 @@
+- Slide show page - glassy look to images? reflection
+- improve search... seems to take a few seconds to kick off a search
+- ability to have multiple bookcases
+- settings for multiple search providers (Google, OpenLibrary, Amazon, etc.) or maybe a merge of multiple sources
+- integrate calibre library import
+- goodreads import
+- add added to bookshelf list date to database
+- add number of pages to database
+- recommendations section with quick add
+- quick delete button in search bar
+- maybe don't clear out search results on add, but blank out selected book
+- background image for Home screen
+- Play/Pause button on slideshow
+- landscape mode
+    - support for TV viewing
+- create account and link across devices
+- Amazon Affiliate
+- some sort of special screen for BookcaseScreen when no books in bookcase
+
+
+https://openlibrary.org/search.json?q=In+The+Blood+Jack+Carr&fields=key,title,author_name,cover_i,format,publish_date,isbn,number_of_pages,description
