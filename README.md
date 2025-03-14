@@ -15,7 +15,8 @@ In phase 1, I'd like to get a working prototype working that has all of the core
 - Ability to rate the book
 - Ability to remove books from the bookshelf
 
-Here is a demo of what I've produced:
+Here is a demo of the app in phase 1:
+
 ![Digital Bookcase App Demo](demo/DigitalBookcase_Phase_1_Demo.gif)
 
 ## Phase 2
