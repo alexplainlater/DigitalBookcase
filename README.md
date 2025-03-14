@@ -35,7 +35,7 @@ As showcased in the GIF below, Phase 1 delivers a working prototype demonstratin
 
 [![Digital Bookcase App Demo](demo/DigitalBookcase_Phase_1_Demo.gif)](demo/DigitalBookcase_Phase_1_Demo.gif)
 
-[**View Demo in Full Size**](demo/DigitalBookcase_Phase_1_Demo.gif)
+[**View Demo in Full Size**](demo/DigitalBookcase_Phase_1_Demo_900_600.gif)
 
 ## Phase 2: Future Enhancements & Ideas
 
